@@ -21,6 +21,50 @@ type OpCount struct {
 	Filter    string  `bson:"filter"`
 }
 
+func (ptr *SQLite3DB) GetSlowOpsV2(orderBy string, order string, collscan bool, ns string, op []string) ([]OpStat, error) {
+	db := ptr.db
+	query := fmt.Sprintf(`SELECT op, count, avg_ms, max_ms,
+			total_ms, ns, _index "index", reslen, filter "query_pattern"
+			FROM %v_ops ORDER BY %v %v`, ptr.hatchetName, orderBy, order)
+	if collscan {
+		query = fmt.Sprintf(`SELECT op, count, avg_ms, max_ms,
+				total_ms, ns, _index "index", reslen, filter "query_pattern"
+				FROM %v_ops WHERE _index = "COLLSCAN" ORDER BY %v %v`, ptr.hatchetName, orderBy, order)
+	}
+	if len(ns) > 0 || len(op) > 0 {
+		query = `SELECT op, count, avg_ms, max_ms, total_ms, ns, _index "index", reslen, filter "query_pattern" FROM ` + ptr.hatchetName + `_ops WHERE`
+		if collscan {
+			query += ` _index = "COLLSCAN" and`
+		}
+		if len(ns) > 0 {
+			query += ` ns LIKE "%` + ns + `%" and`
+		}
+		if len(op) > 0 {
+			query += ` op IN ('` + strings.Join(op, "','") + `')`
+		}
+		query = strings.Trim(strings.TrimRight(query, "and"), " ")
+		query += ` ORDER BY ` + orderBy + ` ` + order
+	}
+	if ptr.verbose {
+		log.Println(query)
+	}
+	rows, err := db.Query(query)
+	ops := []OpStat{}
+	if err != nil {
+		return ops, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var op OpStat
+		if err = rows.Scan(&op.Op, &op.Count, &op.AvgMilli, &op.MaxMilli, &op.TotalMilli,
+			&op.Namespace, &op.Index, &op.Reslen, &op.QueryPattern); err != nil {
+			return ops, err
+		}
+		ops = append(ops, op)
+	}
+	return ops, err
+}
+
 func (ptr *SQLite3DB) GetSlowOps(orderBy string, order string, collscan bool) ([]OpStat, error) {
 	ops := []OpStat{}
 	db := ptr.db

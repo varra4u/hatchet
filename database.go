@@ -39,6 +39,7 @@ type Database interface {
 	GetReslenByNamespace(ip string, duration string) ([]NameValue, error)
 	GetReslenByIP(ip string, duration string) ([]NameValue, error)
 	GetSlowOps(orderBy string, order string, collscan bool) ([]OpStat, error)
+	GetSlowOpsV2(orderBy string, order string, collscan bool, ns string, op []string) ([]OpStat, error)
 	GetSlowestLogs(topN int) ([]LegacyLog, error)
 	GetVerbose() bool
 	InsertClientConn(index int, doc *Logv2Info) error

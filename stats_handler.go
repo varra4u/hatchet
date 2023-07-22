@@ -7,10 +7,10 @@ package hatchet
 
 import (
 	"encoding/json"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
-
-	"github.com/julienschmidt/httprouter"
+	"strings"
 )
 
 // StatsHandler responds to API calls
@@ -53,8 +53,16 @@ func StatsHandler(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		return
 	} else if attr == "slowops" {
 		collscan := false
+		var ns string
+		var op string
 		if r.URL.Query().Get(COLLSCAN) == "true" {
 			collscan = true
+		}
+		if len(r.URL.Query().Get("ns")) > 0 {
+			ns = r.URL.Query().Get("ns")
+		}
+		if len(r.URL.Query().Get("op")) > 0 {
+			op = r.URL.Query().Get("op")
 		}
 		var order, orderBy string
 		orderBy = r.URL.Query().Get("orderBy")
@@ -71,12 +79,13 @@ func StatsHandler(w http.ResponseWriter, r *http.Request, params httprouter.Para
 				order = "DESC"
 			}
 		}
-		ops, err := dbase.GetSlowOps(orderBy, order, collscan)
+		//ops, err := dbase.GetSlowOps(orderBy, order, collscan)
+		ops, err := dbase.GetSlowOpsV2(orderBy, order, collscan, ns, handleOpParamValues(op))
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": 0, "error": err.Error()})
 			return
 		}
-		templ, err := GetStatsTableTemplate(collscan, orderBy, download)
+		templ, err := GetStatsTableTemplate(collscan, orderBy, ns, op, download)
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": 0, "error": err.Error()})
 			return
@@ -88,4 +97,18 @@ func StatsHandler(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		}
 		return
 	}
+}
+
+func handleOpParamValues(op string) []string {
+	var result []string
+	if len(strings.Trim(op, "")) > 0 {
+		ops := strings.Split(strings.ReplaceAll(op, " ", ""), ",")
+		for i := 0; i < len(ops); i++ {
+			opParam := strings.Trim(ops[i], " ")
+			if len(opParam) > 0 && !strings.HasPrefix(opParam, "-") {
+				result = append(result, strings.ToLower(opParam))
+			}
+		}
+	}
+	return result
 }

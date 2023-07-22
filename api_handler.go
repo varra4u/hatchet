@@ -35,10 +35,13 @@ func APIHandler(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
 	if category == "stats" && attr == "slowops" {
 		orderBy := r.URL.Query().Get("orderBy")
+		ns := r.URL.Query().Get("ns")
+		op := r.URL.Query().Get("op")
 		if orderBy == "" {
 			orderBy = "avg_ms"
 		}
-		ops, err := dbase.GetSlowOps(orderBy, "DESC", false)
+		//ops, err := dbase.GetSlowOps(orderBy, "DESC", false)
+		ops, err := dbase.GetSlowOpsV2(orderBy, "DESC", false, ns, handleOpParamValues(op))
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": 0, "error": err.Error()})
 		}

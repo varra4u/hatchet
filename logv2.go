@@ -21,8 +21,8 @@ import (
 const (
 	COLLSCAN   = "COLLSCAN"
 	DOLLAR_CMD = "$cmd"
-	LIMIT      = 100
-	TOP_N      = 23
+	LIMIT      = 1000
+	TOP_N      = 250
 )
 
 var instance *Logv2

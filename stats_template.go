@@ -17,12 +17,12 @@ import (
 const MIN_MONGO_VER = "5.0"
 
 // GetStatsTableTemplate returns HTML
-func GetStatsTableTemplate(collscan bool, orderBy string, download string) (*template.Template, error) {
+func GetStatsTableTemplate(collscan bool, orderBy string, ns string, op string, download string) (*template.Template, error) {
 	html := headers
 	if download == "" {
 		html = getContentHTML()
 	}
-	html += getStatsTable(collscan, orderBy, download) + "</body></html>"
+	html += getStatsTable(collscan, orderBy, ns, op, download) + "</body></html>"
 	return template.New("hatchet").Funcs(template.FuncMap{
 		"add": func(a int, b int) int {
 			return a + b
@@ -36,7 +36,7 @@ func GetStatsTableTemplate(collscan bool, orderBy string, download string) (*tem
 		}}).Parse(html)
 }
 
-func getStatsTable(collscan bool, orderBy string, download string) string {
+func getStatsTable(collscan bool, orderBy string, ns string, op string, download string) string {
 	checked := ""
 	if collscan {
 		checked = "checked"
@@ -45,7 +45,7 @@ func getStatsTable(collscan bool, orderBy string, download string) string {
 <script>
 	function getSlowopsStats() {
 		var b = document.getElementById('collscan').checked;
-		loadData('/hatchets/{{.Hatchet}}/stats/slowops?orderBy=%v&COLLSCAN='+b);
+		loadData('/hatchets/{{.Hatchet}}/stats/slowops?orderBy=%v&COLLSCAN='+b+'&ns=%v&os=%v');
 	}
 	function downloadStats() {
         anchor = document.createElement('a');
@@ -54,7 +54,7 @@ func getStatsTable(collscan bool, orderBy string, download string) string {
         anchor.dataset.downloadurl = ['text/html', anchor.download, anchor.href].join(':');
         anchor.click();
     }
-</script>`, orderBy)
+</script>`, orderBy, ns)
 	asc := "<i class='fa fa-sort-asc'/>"
 	desc := "<i class='fa fa-sort-desc'/>"
 	html += `<div align='left'>`
@@ -67,13 +67,13 @@ func getStatsTable(collscan bool, orderBy string, download string) string {
 		desc = ""
 	}
 	html += `<table width='100%'><tr><th>#</th>`
-	html += fmt.Sprintf(`<th>op <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=op&COLLSCAN=%v'>%v</th>`, collscan, asc)
-	html += fmt.Sprintf(`<th>namespace <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=ns&order=ASC&COLLSCAN=%v'>%v</th>`, collscan, asc)
-	html += fmt.Sprintf(`<th>count <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=count&COLLSCAN=%v'>%v</th>`, collscan, desc)
-	html += fmt.Sprintf(`<th>avg ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=avg_ms&COLLSCAN=%v'>%v</th>`, collscan, desc)
-	html += fmt.Sprintf(`<th>max ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=max_ms&COLLSCAN=%v'>%v</th>`, collscan, desc)
-	html += fmt.Sprintf(`<th>total ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=total_ms&COLLSCAN=%v'>%v</th>`, collscan, desc)
-	html += fmt.Sprintf(`<th>reslen <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=reslen&COLLSCAN=%v'>%v</th>`, collscan, desc)
+	html += fmt.Sprintf(`<th>op <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=op&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, asc)
+	html += fmt.Sprintf(`<th>namespace <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=ns&order=ASC&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, asc)
+	html += fmt.Sprintf(`<th>count <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=count&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, desc)
+	html += fmt.Sprintf(`<th>avg ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=avg_ms&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, desc)
+	html += fmt.Sprintf(`<th>max ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=max_ms&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, desc)
+	html += fmt.Sprintf(`<th>total ms <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=total_ms&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, desc)
+	html += fmt.Sprintf(`<th>reslen <a class='sort' href='/hatchets/{{.Hatchet}}/stats/slowops?orderBy=reslen&COLLSCAN=%v&op=%v&ns=%v'>%v</th>`, collscan, op, ns, desc)
 	if download == "" {
 		html += fmt.Sprintf(`<th valign='middle'>index <input type='checkbox' id='collscan' onchange='getSlowopsStats(); return false;' %v></th>`, checked)
 	} else {

@@ -384,7 +384,7 @@ func getMainPage() string {
       <tr><td align=center><i class="fa fa-bar-chart"></i></td><td>Charts</td><td>A number of charts are available for security audits and performance metrics</td></tr>
       <tr><td align=center><i class="fa fa-search"></i></td><td>Search</td><td>Powerful log searching function with key metrics highlighted</td></tr>
       <tr><td align=center><i class="fa fa-info"></i></td><td>Stats</td><td>Summary of slow operational query patterns and duration</td></tr>
-      <tr><td align=center><i class="fa fa-list"></i></td><td>TopN</td><td>Display the slowest 23 operation logs</td></tr>
+      <tr><td align=center><i class="fa fa-list"></i></td><td>TopN</td><td>Display the slowest 250 operation logs</td></tr>
     </table>
 <h3>Charts</h3>
     <table width='100%'>
@@ -408,7 +408,7 @@ func getMainPage() string {
 	<li>/hatchets/{hatchet}/charts/{chart}[?type={str}]</li>
 	<li>/hatchets/{hatchet}/logs/all[?component={str}&context={str}&duration={date},{date}&severity={str}&limit=[{offset},]{int}]</li>
 	<li>/hatchets/{hatchet}/logs/slowops[?topN={int}]</li>
-	<li>/hatchets/{hatchet}/stats/slowops[?COLLSCAN={bool}&orderBy={str}]</li>
+	<li>/hatchets/{hatchet}/stats/slowops[?COLLSCAN={bool}&orderBy={str}&op={str,[-]str}&ns={str}]</li>
 </ul>
 
 <h3>API</h3>
@@ -416,7 +416,7 @@ func getMainPage() string {
 	<li>/api/hatchet/v1.0/hatchets/{hatchet}/logs/all[?component={str}&context={str}&duration={date},{date}&severity={str}&limit=[{offset},]{int}]</li>
 	<li>/api/hatchet/v1.0/hatchets/{hatchet}/logs/slowops[?topN={int}]</li>
 	<li>/api/hatchet/v1.0/hatchets/{hatchet}/stats/audit</li>
-	<li>/api/hatchet/v1.0/hatchets/{hatchet}/stats/slowops[?COLLSCAN={bool}&orderBy={str}]</li>
+	<li>/api/hatchet/v1.0/hatchets/{hatchet}/stats/slowops[?COLLSCAN={bool}&orderBy={str}&op={str,[-]str}&ns={str}]</li>
 	<li>/api/hatchet/v1.0/mongodb/{version}/drivers/{driver}?compatibleWith={driver version}</li>
 </ul>
 <h4 align='center'><hr/>{{.Version}}</h4>

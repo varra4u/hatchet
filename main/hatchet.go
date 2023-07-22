@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/simagix/hatchet"
@@ -18,4 +19,9 @@ func main() {
 	}
 	fullVersion := fmt.Sprintf(`%v %v`, repo, version)
 	hatchet.Run(fullVersion)
+}
+
+func main1() {
+	a := []string{"find", " -count", "update"}
+	print(strings.Join(a, "\",\""))
 }

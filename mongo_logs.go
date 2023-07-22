@@ -87,6 +87,83 @@ func (ptr *MongoDB) GetSlowOps(orderBy string, order string, collscan bool) ([]O
 	return ops, nil
 }
 
+// GetSlowOpsV2 TODO Need to implement correctly for ns.
+func (ptr *MongoDB) GetSlowOpsV2(orderBy string, order string, collscan bool, ns string, op []string) ([]OpStat, error) {
+	db := ptr.db
+	sortOrder := 1
+	if order == "DESC" {
+		sortOrder = -1
+	}
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"_index": "COLLSCAN",
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": bson.M{
+					"op":     "$op",
+					"ns":     "$ns",
+					"filter": "$filter",
+					"_index": "$_index",
+				},
+				"count":    bson.M{"$sum": "$count"},
+				"avg_ms":   bson.M{"$avg": "$avg_ms"},
+				"max_ms":   bson.M{"$max": "$max_ms"},
+				"total_ms": bson.M{"$sum": "$total_ms"},
+				"reslen":   bson.M{"$sum": "$reslen"},
+			},
+		},
+		{
+			"$project": bson.M{
+				"_id":           0,
+				"op":            "$_id.op",
+				"count":         1,
+				"avg_ms":        bson.M{"$round": []interface{}{"$avg_ms", 0}},
+				"max_ms":        1,
+				"total_ms":      1,
+				"ns":            "$_id.ns",
+				"index":         "$_id._index",
+				"reslen":        1,
+				"query_pattern": "$_id.filter",
+			},
+		},
+		{
+			"$sort": bson.M{
+				orderBy: sortOrder,
+			},
+		},
+	}
+	if !collscan {
+		pipeline[0]["$match"] = bson.M{"op": bson.M{"$nin": []interface{}{nil, ""}}}
+	}
+
+	if len(ns) > 0 {
+		pipeline[0]["$match"] = bson.M{"ns": "/" + ns + "/"}
+	}
+	if ptr.verbose {
+		log.Println(pipeline)
+	}
+	var ops []OpStat
+	cur, err := db.Collection(ptr.hatchetName+"_ops").Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return ops, err
+	}
+	defer cur.Close(context.Background())
+	for cur.Next(context.Background()) {
+		var op OpStat
+		if err = cur.Decode(&op); err != nil {
+			return ops, err
+		}
+		ops = append(ops, op)
+	}
+	if err = cur.Err(); err != nil {
+		return ops, err
+	}
+	return ops, nil
+}
+
 func (ptr *MongoDB) GetLogs(opts ...string) ([]LegacyLog, error) {
 	docs := []LegacyLog{}
 	collection := ptr.db.Collection(ptr.hatchetName)
